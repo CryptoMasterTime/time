@@ -32,6 +32,7 @@ contract TimeTokenProjectPlatform {
 
     event ProjectPublished(address projectOwner, string hash, string url, uint256 amount);
     event ProjectDetailsUpdated(address projectOwner, string hash, string url, uint256 amount);
+    event ProjectApproved(address projectOwner, string hash, string url, uint256 amount);
 
     constructor(address _timeAuditCommitteeAddress, address _timeTokenAddress) {
         timeAuditCommitteeAddress = _timeAuditCommitteeAddress;
@@ -43,7 +44,7 @@ contract TimeTokenProjectPlatform {
         // Call the TimeAuditCommittee contract to verify if the caller is a committee member
         TimeAuditCommittee timeAuditCommittee = TimeAuditCommittee(timeAuditCommitteeAddress);
         TimeAuditCommittee.CommitteeMember memory committeeMember = timeAuditCommittee.getCommitteeMember(0);
-        require(committeeMember.memberAddress == msg.sender, "Caller is not a committee member");
+        require(committeeMember.memberAddress != msg.sender, "Publisher cannot be a committee member");
 
         // Use the transfer function of ERC-20 time token to ensure the token is transferred from the caller's account to the contract
         TimeToken timeToken = TimeToken(timeTokenAddress);
@@ -79,5 +80,20 @@ contract TimeTokenProjectPlatform {
         TimeToken timeToken = TimeToken(timeTokenAddress);
         return timeToken.balanceOf(address(this));
     }
-}
 
+    // Committee member approves a project
+    function approveProject(address projectOwner) external {
+        TimeAuditCommittee timeAuditCommittee = TimeAuditCommittee(timeAuditCommitteeAddress);
+        TimeAuditCommittee.CommitteeMember memory committeeMember = timeAuditCommittee.getCommitteeMember(0);
+        require(committeeMember.memberAddress == msg.sender, "Caller is not a committee member");
+
+        Project storage project = projects[projectOwner];
+        require(project.projectOwner != address(0), "Project does not exist");
+        require(!project.isApproved, "Project has already been approved");
+
+        project.isApproved = true;
+
+        // Emit the event
+        emit ProjectApproved(projectOwner, project.hash, project.url, project.amount);
+    }
+}
