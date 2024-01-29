@@ -26,6 +26,7 @@ contract TimeTokenProjectPlatform {
         string url;
         uint256 amount;
         bool isApproved;
+        uint256 approvalCount; // New field to keep track of approvals
     }
 
     mapping(address => Project) public projects;
@@ -41,11 +42,6 @@ contract TimeTokenProjectPlatform {
 
     // Deposit time token and gain the right to publish a project
     function depositAndPublish(string memory hash, string memory url, uint256 amount) external payable {
-        // Call the TimeAuditCommittee contract to verify if the caller is a committee member
-        TimeAuditCommittee timeAuditCommittee = TimeAuditCommittee(timeAuditCommitteeAddress);
-        TimeAuditCommittee.CommitteeMember memory committeeMember = timeAuditCommittee.getCommitteeMember(0);
-        require(committeeMember.memberAddress != msg.sender, "Publisher cannot be a committee member");
-
         // Use the transfer function of ERC-20 time token to ensure the token is transferred from the caller's account to the contract
         TimeToken timeToken = TimeToken(timeTokenAddress);
         require(timeToken.transferFrom(msg.sender, address(this), amount), "Transfer failed");
@@ -56,7 +52,8 @@ contract TimeTokenProjectPlatform {
             hash: hash,
             url: url,
             amount: amount,
-            isApproved: false
+            isApproved: false,
+            approvalCount: 0 // Initialize approval count to zero
         });
 
         // Emit the event
@@ -84,16 +81,31 @@ contract TimeTokenProjectPlatform {
     // Committee member approves a project
     function approveProject(address projectOwner) external {
         TimeAuditCommittee timeAuditCommittee = TimeAuditCommittee(timeAuditCommitteeAddress);
-        TimeAuditCommittee.CommitteeMember memory committeeMember = timeAuditCommittee.getCommitteeMember(0);
-        require(committeeMember.memberAddress == msg.sender, "Caller is not a committee member");
 
         Project storage project = projects[projectOwner];
         require(project.projectOwner != address(0), "Project does not exist");
         require(!project.isApproved, "Project has already been approved");
 
-        project.isApproved = true;
+        // Verify if the caller is a committee member
+        bool isCommitteeMember = false;
+        for (uint256 i = 0; i < 10; i++) {
+            TimeAuditCommittee.CommitteeMember memory committeeMember = timeAuditCommittee.getCommitteeMember(i);
+            if (committeeMember.memberAddress == msg.sender) {
+                isCommitteeMember = true;
+                break;
+            }
+        }
+        require(isCommitteeMember, "Caller is not a committee member");
 
-        // Emit the event
-        emit ProjectApproved(projectOwner, project.hash, project.url, project.amount);
+        // Increase the approval count for the project
+        project.approvalCount++;
+
+        // Check if the project should be approved (at least 7 approvals)
+        if (project.approvalCount > 6) {
+            project.isApproved = true;
+
+            // Emit the event
+            emit ProjectApproved(projectOwner, project.hash, project.url, project.amount);
+        }
     }
 }
