@@ -84,10 +84,6 @@ The TimeTokenProjectPlatform contract is a decentralized platform built on the E
 
 ## Getting Started
 
-### Prerequisites
-
-- Install [Solidity Compiler](https://soliditylang.org/).
-
 ### Deployment
 
 1. Deploy the `TimeToken` and `TimeAuditCommittee` contracts.
