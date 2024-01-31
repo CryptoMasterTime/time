@@ -36,75 +36,81 @@
 
 
 
-# TimeTokenProjectPlatform
+# Time Token Project Platform
 
 ## Overview
 
-The TimeTokenProjectPlatform contract is a decentralized platform built on the Ethereum blockchain, facilitating the management and approval of projects using a custom ERC-20 token known as "Time Token." The platform incorporates a governance model through a time audit committee, allowing for transparent and decentralized decision-making.
+The Time Token Project Platform is a decentralized platform built on the Ethereum blockchain for managing and executing time-based projects. The platform leverages ERC-20 time tokens for transactions and incorporates a committee-based approval system to ensure project integrity and fund allocation.
 
-## Smart Contract Components
+## Smart Contracts
 
-### Interfaces
+### TimeToken
 
-1. **TimeToken Interface:**
-   - `transferFrom`: Allows the contract to transfer Time Tokens between addresses.
-   - `balanceOf`: Retrieves the balance of Time Tokens for a specified account.
+- Interface representing the ERC-20 time token contract.
+- Functions:
+  - `transferFrom`: Transfer time tokens from one address to another.
+  - `balanceOf`: Get the balance of time tokens for a specific account.
 
-2. **TimeAuditCommittee Interface:**
-   - `getCommitteeMember`: Fetches details of a committee member based on the provided index.
+### TimeAuditCommittee
 
-### Contract Structure
+- Interface defining the TimeAuditCommittee structure and functions.
+- Functions:
+  - `getCommitteeMember`: Retrieve information about a committee member by index.
 
-- **Project Structure:**
-  - `projectOwner`: Address of the project owner.
-  - `hash`: Unique identifier for the project.
-  - `url`: URL associated with the project.
-  - `amount`: Funding amount in Time Tokens.
-  - `isApproved`: Boolean indicating project approval status.
-  - `approvalCount`: Count of committee approvals.
+### TimeTokenProjectPlatform
 
-- **Events:**
-  - `ProjectPublished`: Triggered when a project is published on the platform.
-  - `ProjectDetailsUpdated`: Triggered when project details are updated.
-  - `ProjectApproved`: Triggered when a project receives sufficient committee approvals.
+- Main smart contract managing the platform's functionality.
+- Structs:
+  - `Project`: Represents a project with various attributes such as owner, details, approval status, contractor, and pledged amount.
+- Events:
+  - `ProjectPublished`: Emitted when a project is published on the platform.
+  - `ProjectDetailsUpdated`: Emitted when project details are updated by the owner.
+  - `ProjectApproved`: Emitted when a project receives the required committee approvals.
+  - `ProjectContractAccepted`: Emitted when a contractor accepts a project and pledges time tokens.
+  - `FundsAllocated`: Emitted when funds are allocated to a contractor after committee approval.
+- Functions:
+  - `depositAndPublish`: Deposit time tokens and publish a new project.
+  - `updateProjectDetails`: Update project details, allowed only by the project owner.
+  - `getTimeTokenBalance`: Get the balance of time tokens held by the platform.
+  - `approveProject`: Committee members can approve a project.
+  - `acceptProject`: Contractors can accept a project and pledge time tokens.
+  - `allocateFunds`: Committee members vote to allocate funds to a contractor.
 
-### Contract Functions
+## Workflow
 
-1. **depositAndPublish:**
-   - Allows users to deposit Time Tokens and publish a project on the platform.
+1. **Project Publication:**
+   - Owners deposit time tokens and publish projects.
+   - Details can be updated by the owner.
 
-2. **updateProjectDetails:**
-   - Permits the project owner to update project details.
+2. **Committee Approval:**
+   - Committee members review and approve projects.
 
-3. **getTimeTokenBalance:**
-   - Retrieves the current balance of Time Tokens held by the contract.
+3. **Contractor Acceptance:**
+   - Approved projects are accepted by contractors.
+   - Contractors pledge time tokens.
 
-4. **approveProject:**
-   - Enables committee members to vote and approve a project.
+4. **Funds Allocation:**
+   - Committee members vote to allocate funds.
+   - Funds are transferred to the contractor upon approval.
 
-## Getting Started
+## Usage
 
-### Deployment
+1. **Deploy Smart Contracts:**
+   - Deploy the TimeToken, TimeAuditCommittee, and TimeTokenProjectPlatform contracts.
 
-1. Deploy the `TimeToken` and `TimeAuditCommittee` contracts.
-2. Deploy the `TimeTokenProjectPlatform` contract, providing the addresses of the deployed time token and audit committee contracts.
+2. **Project Lifecycle:**
+   - Users can deposit time tokens, publish projects, and update project details.
+   - Committee members approve projects.
+   - Contractors accept projects and pledge time tokens.
 
-### Usage
+3. **Funds Allocation:**
+   - Committee members vote to allocate funds to contractors.
+   - Funds are transferred upon committee approval.
 
-- Use the `depositAndPublish` function to publish a project by depositing Time Tokens.
-- Update project details using the `updateProjectDetails` function.
-- Committee members can approve projects through the `approveProject` function.
-
-## Security Considerations
-
-- Ensure a secure deployment environment.
-- Perform a comprehensive security audit before deploying in a production environment.
-
-## Governance Model
-
-The platform relies on a decentralized governance model where committee members collectively approve projects.
+4. **Smart Contract Addresses:**
+   - Configure the platform with the addresses of deployed contracts.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
