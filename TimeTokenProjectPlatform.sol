@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 interface TimeToken {
-    // Assume there is an ERC-20 time token contract; the following is a simplified interface
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
     function balanceOf(address account) external view returns (uint256);
 }
@@ -26,7 +25,11 @@ contract TimeTokenProjectPlatform {
         string url;
         uint256 amount;
         bool isApproved;
-        uint256 approvalCount; // New field to keep track of approvals
+        uint256 approvalCount; // For project approval
+        address projectContractor;
+        bool isContractAccepted;
+        uint256 pledgeAmount;
+        uint256 fundsAllocationCount; // For funds allocation
     }
 
     mapping(address => Project) public projects;
@@ -34,6 +37,8 @@ contract TimeTokenProjectPlatform {
     event ProjectPublished(address projectOwner, string hash, string url, uint256 amount);
     event ProjectDetailsUpdated(address projectOwner, string hash, string url, uint256 amount);
     event ProjectApproved(address projectOwner, string hash, string url, uint256 amount);
+    event ProjectContractAccepted(address projectContractor, string hash, string url, uint256 amount, uint256 pledgeAmount);
+    event FundsAllocated(address projectContractor, uint256 allocationAmount);
 
     constructor(address _timeAuditCommitteeAddress, address _timeTokenAddress) {
         timeAuditCommitteeAddress = _timeAuditCommitteeAddress;
@@ -42,21 +47,22 @@ contract TimeTokenProjectPlatform {
 
     // Deposit time token and gain the right to publish a project
     function depositAndPublish(string memory hash, string memory url, uint256 amount) external payable {
-        // Use the transfer function of ERC-20 time token to ensure the token is transferred from the caller's account to the contract
         TimeToken timeToken = TimeToken(timeTokenAddress);
         require(timeToken.transferFrom(msg.sender, address(this), amount), "Transfer failed");
 
-        // Publish the project
         projects[msg.sender] = Project({
             projectOwner: msg.sender,
             hash: hash,
             url: url,
             amount: amount,
             isApproved: false,
-            approvalCount: 0 // Initialize approval count to zero
+            approvalCount: 0,
+            projectContractor: address(0),
+            isContractAccepted: false,
+            pledgeAmount: 0,
+            fundsAllocationCount: 0
         });
 
-        // Emit the event
         emit ProjectPublished(msg.sender, hash, url, amount);
     }
 
@@ -64,11 +70,9 @@ contract TimeTokenProjectPlatform {
     function updateProjectDetails(string memory hash, string memory url) external {
         require(msg.sender == projects[msg.sender].projectOwner, "Caller is not the project owner");
 
-        // Update project details
         projects[msg.sender].hash = hash;
         projects[msg.sender].url = url;
 
-        // Emit the event
         emit ProjectDetailsUpdated(msg.sender, hash, url, projects[msg.sender].amount);
     }
 
@@ -86,7 +90,6 @@ contract TimeTokenProjectPlatform {
         require(project.projectOwner != address(0), "Project does not exist");
         require(!project.isApproved, "Project has already been approved");
 
-        // Verify if the caller is a committee member
         bool isCommitteeMember = false;
         for (uint256 i = 0; i < 10; i++) {
             TimeAuditCommittee.CommitteeMember memory committeeMember = timeAuditCommittee.getCommitteeMember(i);
@@ -97,15 +100,68 @@ contract TimeTokenProjectPlatform {
         }
         require(isCommitteeMember, "Caller is not a committee member");
 
-        // Increase the approval count for the project
         project.approvalCount++;
 
-        // Check if the project should be approved (at least 7 approvals)
         if (project.approvalCount > 6) {
             project.isApproved = true;
 
-            // Emit the event
             emit ProjectApproved(projectOwner, project.hash, project.url, project.amount);
+        }
+    }
+
+    // Contractor accepts the project and pledges a certain percentage of time tokens
+    function acceptProject(address projectOwner, uint256 pledgeAmount) external {
+        Project storage project = projects[projectOwner];
+        require(project.projectOwner != address(0), "Project does not exist");
+        require(project.isApproved, "Project is not approved");
+        require(project.projectContractor == address(0), "Project already accepted by a contractor");
+        require(msg.sender != project.projectOwner, "Contractor cannot be the project owner");
+        require(pledgeAmount >= 1000, "Pledge amount must be at least 1000");
+
+        TimeToken timeToken = TimeToken(timeTokenAddress);
+        require(timeToken.transferFrom(msg.sender, address(this), pledgeAmount), "Pledge transfer failed");
+
+        project.projectContractor = msg.sender;
+        project.isContractAccepted = true;
+        project.pledgeAmount = pledgeAmount;
+
+        emit ProjectContractAccepted(msg.sender, project.hash, project.url, project.amount, pledgeAmount);
+    }
+
+    // Committee votes to approve the allocation of time tokens to the contractor
+    function allocateFunds(address projectOwner, uint256 allocationAmount) external {
+        TimeAuditCommittee timeAuditCommittee = TimeAuditCommittee(timeAuditCommitteeAddress);
+
+        Project storage project = projects[projectOwner];
+        require(project.projectOwner != address(0), "Project does not exist");
+        require(project.isApproved, "Project is not approved");
+        require(project.isContractAccepted, "Contractor has not accepted the project");
+        require(allocationAmount > 0, "Allocation amount must be greater than zero");
+
+        bool isCommitteeMember = false;
+        for (uint256 i = 0; i < 10; i++) {
+            TimeAuditCommittee.CommitteeMember memory committeeMember = timeAuditCommittee.getCommitteeMember(i);
+            if (committeeMember.memberAddress == msg.sender) {
+                isCommitteeMember = true;
+                break;
+            }
+        }
+        require(isCommitteeMember, "Caller is not a committee member");
+
+        // Increase the approval count for the funds allocation
+        project.fundsAllocationCount++;
+
+        // Check if the allocation should be approved (at least 6 approvals)
+        if (project.fundsAllocationCount > 6) {
+            // Transfer allocated time tokens to the contractor
+            TimeToken timeToken = TimeToken(timeTokenAddress);
+            require(timeToken.transfer(project.projectContractor, allocationAmount), "Funds allocation failed");
+
+            // Reset funds allocation count to zero for the next allocation
+            project.fundsAllocationCount = 0;
+
+            // Emit the event
+            emit FundsAllocated(project.projectContractor, allocationAmount);
         }
     }
 }
