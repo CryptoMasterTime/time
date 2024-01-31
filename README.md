@@ -1,41 +1,3 @@
-# TimeAuditCommittee: A Dynamic Committee Management on Ethereum
-
-`TimeAuditCommittee` is a smart contract that brings the concept of a dynamic committee to the Ethereum blockchain. Crafted with Solidity 0.8.7, this contract serves as a registry for a group of 10 committee members, each holding a balance of TIME tokens.
-
-## Features
-
-1. **Contract Ownership:** The contract is owned by the Ethereum address that deploys it. The owner has exclusive rights to modify the committee members.
-
-2. **TIME Token Interaction:** The contract is designed to interact with a separate ERC20 token contract, known as the TIME token. The contract address of the TIME token is supplied during the contract's deployment.
-
-3. **Committee Management:** The contract maintains a list of 10 committee members. Each member is represented by a struct that includes the member's Ethereum address, a URL (possibly a link to their profile or website), and the amount of TIME tokens they hold.
-
-## Core Functions
-
-- **Constructor:** The constructor function sets the contract owner as the deploying address and initializes the TIME token contract using the provided address.
-
-- **updateCommitteeMembers:** This function, accessible only by the contract owner, allows updating the committee members. It accepts two arrays - an array of Ethereum addresses and an array of URLs, updating each committee member's details and TIME token balance, and fires an event for each newly added member.
-
-- **getCommitteeMember:** This function enables anyone to fetch the details of a committee member, given their index. It returns the member's Ethereum address, URL, and up-to-date TIME token balance.
-
-- **getTimeBalance:** This internal function interfaces with the TIME token contract to fetch the balance of a given Ethereum address.
-
-## Events
-
-- **CommitteeMemberAdded:** This event is triggered every time a new committee member is added, logging the member's Ethereum address and URL.
-
-## Modifiers
-
-- **onlyContractOwner:** This modifier ensures that certain functions can only be called by the contract owner.
-
-`TimeAuditCommittee` smart contract offers an innovative approach to managing a committee of TIME token holders on the Ethereum blockchain.
-
-
-
-
-
-
-
 # Time Token Project Platform
 
 ## Overview
@@ -109,6 +71,81 @@ The Time Token Project Platform is a decentralized platform built on the Ethereu
 
 4. **Smart Contract Addresses:**
    - Configure the platform with the addresses of deployed contracts.
+
+
+
+
+
+# TimeAuditCommittee Smart Contract
+
+The `TimeAuditCommittee` smart contract is a crucial component within the TimeTokenProjectPlatform ecosystem, responsible for overseeing project audits and ensuring adherence to predefined standards. This committee plays a pivotal role in upholding project integrity before they are approved and executed.
+
+## Overview
+
+- **Smart Contract Name:** TimeAuditCommittee
+- **Solidity Version:** ^0.8.7
+- **License:** MIT
+
+## Functionality
+
+### 1. Committee Initialization
+
+The committee is initialized with the address of the TIME token contract, and the contract owner is set to the deployer of the contract.
+
+```solidity
+constructor(address _timeTokenAddress)
+```
+
+### 2. Update Committee Members
+
+The contract owner can update the committee members' information, including their addresses, URLs, and TIME token balances.
+
+```solidity
+function updateCommitteeMembers(address[10] memory addresses, string[10] memory urls) external onlyContractOwner
+```
+
+### 3. Get Committee Member Information
+
+Any external party can query the information of a specific committee member, including their address, URL, and TIME token balance.
+
+```solidity
+function getCommitteeMember(uint256 index) external view returns (CommitteeMember memory)
+```
+
+### 4. Internal Function: Get TIME Token Balance
+
+An internal function to retrieve the TIME token balance of a given account using the `balanceOf` method of the TIME token contract.
+
+```solidity
+function getTimeBalance(address account) internal view returns (uint256)
+```
+
+## Events
+
+- `CommitteeMemberAdded`: Triggered when the contract owner updates the committee members' information.
+
+```solidity
+event CommitteeMemberAdded(address memberAddress, string url);
+```
+
+## Modifiers
+
+- `onlyContractOwner`: Ensures that only the contract owner can perform certain actions.
+
+```solidity
+modifier onlyContractOwner()
+```
+
+## Dependencies
+
+- [OpenZeppelin ERC20 Interface](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol)
+
+## Contribution
+
+Feel free to contribute, report issues, or suggest improvements. This smart contract is integral to the TimeTokenProjectPlatform ecosystem, promoting transparency and accountability in project management. Your engagement is highly valued.
+
+
+
 
 ## License
 
