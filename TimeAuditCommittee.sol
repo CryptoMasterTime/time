@@ -1,44 +1,45 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.7;
+pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol"; // Import ERC20 interface
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-contract TimeAuditCommittee {
-    address public contractOwner;
-    IERC20 public timeToken; // TIME token contract
-
+contract TimeAuditCommittee is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
     struct CommitteeMember {
         address memberAddress;
-        string url;
-        uint256 timeBalance; // TIME balance
+        bytes32 url;
+        uint256 timeBalance;
     }
 
     CommitteeMember[10] public committeeMembers;
+    address public upgrader;
 
-    event CommitteeMemberAdded(address memberAddress, string url);
+    event CommitteeMembersUpdated();
 
-    modifier onlyContractOwner() {
-        require(msg.sender == contractOwner, "Only contract owner can perform this action");
-        _;
-    }
+    function initialize(address _timeTokenAddress, address _owner, address _upgrader) initializer public {
+        __Ownable_init();
+        __UUPSUpgradeable_init();
 
-    constructor(address _timeTokenAddress) {
-        contractOwner = msg.sender;
+        _setOwner(_owner);
         timeToken = IERC20(_timeTokenAddress);
+        upgrader = _upgrader;
     }
 
-    function updateCommitteeMembers(address[10] memory addresses, string[10] memory urls) external onlyContractOwner {
-        require(addresses.length == 10 && urls.length == 10, "Invalid input length");
+    function setUpgrader(address newUpgrader) external onlyOwner {
+        upgrader = newUpgrader;
+    }
 
+    function updateCommitteeMembers(address[10] memory addresses, bytes32[10] memory urls) external onlyOwner {
         for (uint256 i = 0; i < 10; i++) {
             committeeMembers[i] = CommitteeMember({
                 memberAddress: addresses[i],
                 url: urls[i],
                 timeBalance: getTimeBalance(addresses[i])
             });
-
-            emit CommitteeMemberAdded(addresses[i], urls[i]);
         }
+
+        emit CommitteeMembersUpdated();
     }
 
     function getCommitteeMember(uint256 index) external view returns (CommitteeMember memory) {
@@ -48,8 +49,10 @@ contract TimeAuditCommittee {
     }
 
     function getTimeBalance(address account) internal view returns (uint256) {
-        // Use the balanceOf method of the TIME token contract to get the balance
         return timeToken.balanceOf(account);
     }
-}
 
+    function _authorizeUpgrade(address) internal override {
+        require(msg.sender == upgrader);
+    }
+}
