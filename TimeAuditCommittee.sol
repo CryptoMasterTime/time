@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 contract TimeAuditCommittee is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
     struct CommitteeMember {
         address memberAddress;
-        bytes32 url;
+        string url;
         uint256 timeBalance;
     }
 
