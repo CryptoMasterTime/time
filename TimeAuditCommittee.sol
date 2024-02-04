@@ -30,7 +30,7 @@ contract TimeAuditCommittee is ERC20Upgradeable, OwnableUpgradeable, UUPSUpgrade
         upgrader = newUpgrader;
     }
 
-    function updateCommitteeMembers(address[10] memory addresses, bytes32[10] memory urls) external onlyOwner {
+    function updateCommitteeMembers(address[10] memory addresses, string[10] memory urls) external onlyOwner {
         for (uint256 i = 0; i < 10; i++) {
             committeeMembers[i] = CommitteeMember({
                 memberAddress: addresses[i],

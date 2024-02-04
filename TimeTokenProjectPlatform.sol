@@ -16,8 +16,8 @@ interface TimeAuditCommittee {
 }
 
 contract TimeTokenProjectPlatform {
-    address public timeAuditCommitteeAddress; // Address of the TimeAuditCommittee contract
-    address public timeTokenAddress; // Address of the ERC-20 time token
+    address public timeAuditCommitteeAddress;
+    address public timeTokenAddress;
 
     struct Project {
         address projectOwner;
@@ -25,11 +25,11 @@ contract TimeTokenProjectPlatform {
         string url;
         uint256 amount;
         bool isApproved;
-        uint256 approvalCount; // For project approval
+        uint256 approvalCount;
         address projectContractor;
         bool isContractAccepted;
         uint256 pledgeAmount;
-        uint256 fundsAllocationCount; // For funds allocation
+        uint256 fundsAllocationCount;
     }
 
     mapping(address => Project) public projects;
@@ -45,7 +45,6 @@ contract TimeTokenProjectPlatform {
         timeTokenAddress = _timeTokenAddress;
     }
 
-    // Deposit time token and gain the right to publish a project
     function depositAndPublish(string memory hash, string memory url, uint256 amount) external payable {
         TimeToken timeToken = TimeToken(timeTokenAddress);
         require(timeToken.transferFrom(msg.sender, address(this), amount), "Transfer failed");
@@ -66,7 +65,6 @@ contract TimeTokenProjectPlatform {
         emit ProjectPublished(msg.sender, hash, url, amount);
     }
 
-    // Update project details, only allowed by the project owner
     function updateProjectDetails(string memory hash, string memory url) external {
         require(msg.sender == projects[msg.sender].projectOwner, "Caller is not the project owner");
 
@@ -76,13 +74,11 @@ contract TimeTokenProjectPlatform {
         emit ProjectDetailsUpdated(msg.sender, hash, url, projects[msg.sender].amount);
     }
 
-    // Get the balance of time token
     function getTimeTokenBalance() external view returns (uint256) {
         TimeToken timeToken = TimeToken(timeTokenAddress);
         return timeToken.balanceOf(address(this));
     }
 
-    // Committee member approves a project
     function approveProject(address projectOwner) external {
         TimeAuditCommittee timeAuditCommittee = TimeAuditCommittee(timeAuditCommitteeAddress);
 
@@ -109,7 +105,6 @@ contract TimeTokenProjectPlatform {
         }
     }
 
-    // Contractor accepts the project and pledges a certain percentage of time tokens
     function acceptProject(address projectOwner, uint256 pledgeAmount) external {
         Project storage project = projects[projectOwner];
         require(project.projectOwner != address(0), "Project does not exist");
@@ -128,7 +123,6 @@ contract TimeTokenProjectPlatform {
         emit ProjectContractAccepted(msg.sender, project.hash, project.url, project.amount, pledgeAmount);
     }
 
-    // Committee votes to approve the allocation of time tokens to the contractor
     function allocateFunds(address projectOwner, uint256 allocationAmount) external {
         TimeAuditCommittee timeAuditCommittee = TimeAuditCommittee(timeAuditCommitteeAddress);
 
@@ -148,19 +142,14 @@ contract TimeTokenProjectPlatform {
         }
         require(isCommitteeMember, "Caller is not a committee member");
 
-        // Increase the approval count for the funds allocation
         project.fundsAllocationCount++;
 
-        // Check if the allocation should be approved (at least 6 approvals)
         if (project.fundsAllocationCount > 6) {
-            // Transfer allocated time tokens to the contractor
             TimeToken timeToken = TimeToken(timeTokenAddress);
             require(timeToken.transfer(project.projectContractor, allocationAmount), "Funds allocation failed");
 
-            // Reset funds allocation count to zero for the next allocation
             project.fundsAllocationCount = 0;
 
-            // Emit the event
             emit FundsAllocated(project.projectContractor, allocationAmount);
         }
     }
